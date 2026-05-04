@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>빈플로우 대시보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --grn:#1D9E75;--grn2:#0F6E56;--grn3:#E1F5EE;
+  --amb:#F5A623;--red:#E24B4A;--blu:#378ADD;
+  --bg:#0D1117;--surf:#161B22;--surf2:#21262D;--surf3:#30363D;
+  --txt:#F0F6FC;--muted:#8B949E;--hint:#3D444D;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(29,158,117,.1) 0%,transparent 70%);pointer-events:none;z-index:0;}
+
+.wrap{max-width:480px;margin:0 auto;padding:0 16px 90px;position:relative;z-index:1;}
+
+/* ── 헤더 */
+.hdr{padding:28px 0 16px;display:flex;align-items:flex-end;justify-content:space-between;}
+.hdr-logo{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;background:linear-gradient(135deg,var(--grn),#5FD4A8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;}
+.hdr-sub{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:.8px;text-transform:uppercase;}
+.sync-pill{display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:100px;border:1px solid var(--hint);background:var(--surf);color:var(--muted);cursor:pointer;transition:.2s;}
+.sync-pill.live{background:var(--grn3);color:var(--grn2);border-color:var(--grn);}
+.sync-pill.loading{background:#1a2233;color:var(--blu);border-color:var(--blu);}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.sync-dot.spin{animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);}}
+
+/* ── URL 설정 배너 */
+.url-banner{background:linear-gradient(135deg,#1a2233,#0d1a2e);border:1px solid var(--blu);border-radius:14px;padding:16px;margin-bottom:14px;}
+.url-banner h3{font-size:13px;font-weight:700;color:var(--blu);margin-bottom:8px;}
+.url-banner p{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6;}
+.url-input{width:100%;padding:10px 12px;background:var(--surf);border:1px solid var(--hint);border-radius:10px;color:var(--txt);font-size:12px;font-family:monospace;margin-bottom:8px;}
+.url-input:focus{outline:none;border-color:var(--grn);}
+.url-btn{width:100%;padding:10px;background:var(--grn);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
+.url-btn:active{opacity:.85;}
+
+/* ── 섹션 */
+.sec{display:flex;align-items:center;gap:8px;margin:24px 0 10px;}
+.sec-line{flex:1;height:1px;background:linear-gradient(to right,var(--hint),transparent);}
+.sec-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap;}
+
+/* ── 히어로 카드 */
+.hero{background:linear-gradient(135deg,#0F6E56 0%,#1D9E75 50%,#2DC88F 100%);border-radius:20px;padding:22px 20px;margin-bottom:10px;position:relative;overflow:hidden;}
+.hero::after{content:'☕';position:absolute;right:-10px;bottom:-20px;font-size:100px;opacity:.07;}
+.hero-label{font-size:11px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:1px;text-transform:uppercase;}
+.hero-month{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;}
+.hero-val{font-family:'Bebas Neue',sans-serif;font-size:52px;color:#fff;line-height:1;letter-spacing:2px;}
+.hero-row{display:flex;gap:0;margin-top:14px;background:rgba(0,0,0,.15);border-radius:10px;overflow:hidden;}
+.hero-item{flex:1;text-align:center;padding:10px 4px;}
+.hero-item+.hero-item{border-left:1px solid rgba(255,255,255,.15);}
+.hero-item-val{font-size:18px;font-weight:900;color:#fff;line-height:1;}
+.hero-item-label{font-size:10px;color:rgba(255,255,255,.6);margin-top:3px;}
+
+/* ── KPI */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.kpi{background:var(--surf);border:1px solid var(--hint);border-radius:16px;padding:16px;position:relative;overflow:hidden;transition:transform .2s;}
+.kpi:active{transform:scale(.97);}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,var(--grn));}
+.kpi-icon{font-size:18px;margin-bottom:6px;}
+.kpi-val{font-family:'Bebas Neue',sans-serif;font-size:36px;line-height:1;color:var(--accent,var(--grn));letter-spacing:1px;}
+.kpi-unit{font-size:13px;font-weight:700;color:var(--muted);margin-left:1px;}
+.kpi-label{font-size:11px;color:var(--muted);margin-top:4px;}
+.kpi-sub{font-size:10px;color:var(--hint);margin-top:2px;}
+
+/* ── 바 차트 */
+.bean-list{display:flex;flex-direction:column;gap:9px;}
+.bean-row{display:flex;align-items:center;gap:10px;}
+.bean-name{font-size:12px;font-weight:700;width:82px;flex-shrink:0;}
+.bean-bar-bg{flex:1;height:26px;background:var(--surf2);border-radius:6px;overflow:hidden;}
+.bean-bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;transition:width 1s cubic-bezier(.4,0,.2,1);width:0;}
+.bean-bar-fill span{font-size:11px;font-weight:700;color:#fff;white-space:nowrap;}
+.bean-cnt{font-size:11px;color:var(--muted);width:28px;text-align:right;flex-shrink:0;}
+
+/* ── 거래처 카드 */
+.client-list{display:flex;flex-direction:column;gap:8px;}
+.client-card{background:var(--surf);border:1px solid var(--hint);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;animation:fadeUp .5s ease both;}
+.client-card:active{transform:scale(.98);border-color:var(--grn);}
+.client-av{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex-shrink:0;color:#fff;}
+.client-info{flex:1;min-width:0;}
+.client-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.client-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.client-bean{display:inline-block;margin-top:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;background:var(--grn3);color:var(--grn2);}
+.client-r{text-align:right;flex-shrink:0;}
+.client-kg{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--grn);letter-spacing:1px;}
+.client-kglabel{font-size:10px;color:var(--muted);}
+
+/* ── 발주 타임라인 */
+.timeline{position:relative;padding-left:20px;}
+.timeline::before{content:'';position:absolute;left:6px;top:6px;bottom:6px;width:1px;background:linear-gradient(to bottom,var(--grn),transparent);}
+.tl-item{position:relative;padding:0 0 14px 20px;animation:fadeUp .5s ease both;}
+.tl-item::before{content:'';position:absolute;left:-14px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--grn);border:2px solid var(--bg);}
+.tl-date{font-size:10px;color:var(--muted);margin-bottom:4px;letter-spacing:.5px;}
+.tl-card{background:var(--surf);border:1px solid var(--hint);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:10px;}
+.tl-bean{padding:3px 8px;border-radius:100px;font-size:11px;font-weight:700;flex-shrink:0;}
+.tl-name{font-size:13px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tl-kg{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--grn);flex-shrink:0;}
+.tl-profit{font-size:10px;color:var(--amb);flex-shrink:0;}
+
+/* ── 파이프라인 */
+.pipe-list{display:flex;flex-direction:column;gap:7px;}
+.pipe-card{background:var(--surf);border:1px solid var(--hint);border-radius:12px;padding:12px 14px;animation:fadeUp .4s ease both;}
+.pipe-row{display:flex;align-items:center;gap:8px;}
+.pipe-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;flex-shrink:0;white-space:nowrap;}
+.pipe-name{font-size:13px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pipe-bean{font-size:11px;color:var(--muted);margin-top:3px;}
+.pipe-note{font-size:10px;color:var(--hint);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ── 손익 */
+.profit-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.profit-card{background:var(--surf);border:1px solid var(--hint);border-radius:14px;padding:14px 10px;text-align:center;}
+.profit-val{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;line-height:1;}
+.profit-label{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.4;}
+
+/* ── 탭 네비 */
+.tab-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(22,27,34,.95);backdrop-filter:blur(20px);border-top:1px solid var(--hint);display:flex;padding:8px 0 env(safe-area-inset-bottom);z-index:100;}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;cursor:pointer;border:none;background:none;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;font-family:'Noto Sans KR',sans-serif;transition:color .2s;}
+.tab-btn.active{color:var(--grn);}
+.tab-icon{font-size:20px;line-height:1.2;}
+
+.page{display:none;}
+.page.active{display:block;}
+
+/* ── 공통 */
+.search-box{width:100%;padding:12px 16px;background:var(--surf);border:1px solid var(--hint);border-radius:12px;color:var(--txt);font-size:14px;font-family:'Noto Sans KR',sans-serif;margin-bottom:12px;}
+.search-box:focus{outline:none;border-color:var(--grn);}
+.search-box::placeholder{color:var(--muted);}
+.show-more{width:100%;padding:10px;background:var(--surf2);border:1px solid var(--hint);border-radius:10px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;margin-top:8px;font-family:'Noto Sans KR',sans-serif;}
+.empty{text-align:center;padding:40px 0;color:var(--muted);font-size:13px;}
+.chip-wrap{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;margin-bottom:12px;}
+.chip-wrap::-webkit-scrollbar{display:none;}
+.chip{padding:6px 14px;border-radius:100px;border:1.5px solid var(--hint);background:var(--surf2);color:var(--muted);font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:.15s;flex-shrink:0;}
+.chip.on{background:var(--grn);border-color:var(--grn);color:#fff;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.skeleton{background:linear-gradient(90deg,var(--surf) 25%,var(--surf2) 50%,var(--surf) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:10px;}
+@keyframes shimmer{to{background-position:-200% 0;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ════ 홈 ════ -->
+<div class="page active" id="page-home">
+  <div class="hdr">
+    <div>
+      <div class="hdr-logo">BEANFLOW</div>
+      <div class="hdr-sub">네이처커피 · 실시간 대시보드</div>
+    </div>
+    <div id="sync-pill" class="sync-pill" onclick="syncData()">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-label">연결 안 됨</span>
+    </div>
+  </div>
+
+  <!-- URL 설정 배너 (최초 1회) -->
+  <div class="url-banner" id="url-banner">
+    <h3>🔗 구글 시트 연결 설정</h3>
+    <p>Apps Script 웹앱 URL을 입력하면<br>구글 시트 데이터가 실시간으로 반영됩니다.</p>
+    <input class="url-input" id="api-url-input" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+    <button class="url-btn" onclick="saveUrl()">연결하기</button>
+  </div>
+
+  <div id="home-hero"></div>
+  <div class="kpi-grid" id="home-kpi"></div>
+  <div class="sec"><div class="sec-label">☕ 원두별 거래처 분포</div><div class="sec-line"></div></div>
+  <div class="bean-list" id="home-beans"></div>
+  <div class="sec"><div class="sec-label">💰 이번 달 손익</div><div class="sec-line"></div></div>
+  <div class="profit-grid" id="home-profit"></div>
+  <div class="sec"><div class="sec-label">📅 최근 발주</div><div class="sec-line"></div></div>
+  <div class="timeline" id="home-recent"></div>
+</div>
+
+<!-- ════ 거래처 ════ -->
+<div class="page" id="page-clients">
+  <div class="hdr"><div><div class="hdr-logo">거래처</div><div class="hdr-sub" id="clients-sub">로딩 중...</div></div></div>
+  <input class="search-box" type="text" placeholder="🔍 거래처명 · 담당자 검색..." oninput="filterClients(this.value)">
+  <div class="client-list" id="client-list"></div>
+  <button class="show-more" id="show-more-btn" onclick="showAllClients()" style="display:none">더보기 ▼</button>
+</div>
+
+<!-- ════ 발주 ════ -->
+<div class="page" id="page-orders">
+  <div class="hdr"><div><div class="hdr-logo">발주</div><div class="hdr-sub" id="orders-sub">로딩 중...</div></div></div>
+  <div class="chip-wrap" id="month-chips"></div>
+  <div class="timeline" id="order-timeline"></div>
+</div>
+
+<!-- ════ 파이프라인 ════ -->
+<div class="page" id="page-pipe">
+  <div class="hdr"><div><div class="hdr-logo">파이프라인</div><div class="hdr-sub" id="pipe-sub">로딩 중...</div></div></div>
+  <div class="chip-wrap">
+    <button class="chip on" onclick="filterPipe('전체',this)">전체</button>
+    <button class="chip" onclick="filterPipe('진행중',this)">진행중</button>
+    <button class="chip" onclick="filterPipe('샘플제안',this)">샘플제안</button>
+    <button class="chip" onclick="filterPipe('테스트중',this)">테스트중</button>
+    <button class="chip" onclick="filterPipe('보류',this)">보류</button>
+    <button class="chip" onclick="filterPipe('성약',this)">성약</button>
+  </div>
+  <div class="pipe-list" id="pipe-list"></div>
+</div>
+
+</div>
+
+<!-- 탭 네비 -->
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('home',this)"><div class="tab-icon">🏠</div>홈</button>
+  <button class="tab-btn" onclick="switchTab('clients',this)"><div class="tab-icon">🏪</div>거래처</button>
+  <button class="tab-btn" onclick="switchTab('orders',this)"><div class="tab-icon">📦</div>발주</button>
+  <button class="tab-btn" onclick="switchTab('pipe',this)"><div class="tab-icon">📋</div>파이프라인</button>
+</nav>
+
+<script>
+// ══════════════════════════════════════════
+//  상태
+// ══════════════════════════════════════════
+let API_URL  = localStorage.getItem('bf_api') || '';
+let _data    = { clients:[], orders:[], pipeline:[], summary:{} };
+let _showAll = false;
+let _pipeFilter = '전체';
+let _orderMonth = '';
+let _syncTimer  = null;
+
+const AV_COLORS = ['#1D9E75','#378ADD','#D85A30','#7F77DD','#F5A623','#D4537E','#639922','#5F5E5A','#2DC88F','#F97316'];
+const BEAN_COLORS = {
+  '선사인':'linear-gradient(90deg,#F5A623,#FFD166)',
+  '선라이즈':'linear-gradient(90deg,#D85A30,#F97316)',
+  '레인포레스트':'linear-gradient(90deg,#378ADD,#63B3ED)',
+  '모닝듀':'linear-gradient(90deg,#7F77DD,#A78BFA)',
+  '미스트':'linear-gradient(90deg,#1D9E75,#2DC88F)',
+  '플라워':'linear-gradient(90deg,#D4537E,#F472B6)',
+  '선셋':'linear-gradient(90deg,#854F0B,#D97706)',
+  '아우라':'linear-gradient(90deg,#639922,#86EFAC)',
+  '디카페인':'linear-gradient(90deg,#5F5E5A,#9CA3AF)',
+};
+const STATUS_STYLE = {
+  '진행중':  {bg:'rgba(29,158,117,.15)', color:'#1D9E75'},
+  '샘플제안':{bg:'rgba(245,166,35,.15)', color:'#F5A623'},
+  '테스트중':{bg:'rgba(55,138,221,.15)', color:'#378ADD'},
+  '보류':    {bg:'rgba(226,75,74,.15)',  color:'#E24B4A'},
+  '성약':    {bg:'rgba(29,158,117,.3)',  color:'#2DC88F'},
+};
+
+// ══════════════════════════════════════════
+//  URL 설정
+// ══════════════════════════════════════════
+function saveUrl() {
+  const url = document.getElementById('api-url-input').value.trim();
+  if (!url) return;
+  API_URL = url;
+  localStorage.setItem('bf_api', url);
+  document.getElementById('url-banner').style.display = 'none';
+  syncData();
+}
+
+function initUrlBanner() {
+  if (API_URL) {
+    document.getElementById('url-banner').style.display = 'none';
+    document.getElementById('api-url-input').value = API_URL;
+  }
+}
+
+// ══════════════════════════════════════════
+//  동기화
+// ══════════════════════════════════════════
+async function syncData() {
+  if (!API_URL) { setSyncState('none'); return; }
+  setSyncState('loading');
+  try {
+    const res  = await fetch(API_URL + '?action=getAll');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    _data = data;
+    localStorage.setItem('bf_cache', JSON.stringify(data));
+    setSyncState('live');
+    renderAll();
+  } catch(e) {
+    // 캐시 폴백
+    const cache = localStorage.getItem('bf_cache');
+    if (cache) { _data = JSON.parse(cache); renderAll(); }
+    setSyncState('error');
+  }
+}
+
+function setSyncState(state) {
+  const pill  = document.getElementById('sync-pill');
+  const dot   = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  pill.className = 'sync-pill';
+  dot.className  = 'sync-dot';
+  if (state === 'live') {
+    pill.classList.add('live');
+    const t = new Date();
+    label.textContent = `${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')} 업데이트`;
+  } else if (state === 'loading') {
+    pill.classList.add('loading');
+    dot.classList.add('spin');
+    label.textContent = '동기화 중...';
+  } else if (state === 'error') {
+    label.textContent = '오류 · 캐시 사용';
+  } else {
+    label.textContent = '연결 안 됨';
+  }
+}
+
+// 5분마다 자동 새로고침
+function startAutoSync() {
+  if (_syncTimer) clearInterval(_syncTimer);
+  if (API_URL) _syncTimer = setInterval(syncData, 5 * 60 * 1000);
+}
+
+// ══════════════════════════════════════════
+//  전체 렌더
+// ══════════════════════════════════════════
+function renderAll() {
+  renderHome();
+  renderClients();
+  renderOrders();
+  renderPipeline();
+}
+
+// ══════════════════════════════════════════
+//  홈 렌더
+// ══════════════════════════════════════════
+function renderHome() {
+  const s = _data.summary || {};
+  const orders = _data.orders || [];
+  const clients = _data.clients || [];
+
+  // 히어로
+  const monthLabel = s.month ? s.month.replace('-','년 ')+'월' : '이번 달';
+  document.getElementById('home-hero').innerHTML = `
+    <div class="hero">
+      <div class="hero-label">총 매출</div>
+      <div class="hero-month">${monthLabel}</div>
+      <div class="hero-val">₩${fmt(s.totalSales||0)}</div>
+      <div class="hero-row">
+        <div class="hero-item"><div class="hero-item-val">${s.totalKg||0}<span style="font-size:12px">kg</span></div><div class="hero-item-label">발주량</div></div>
+        <div class="hero-item"><div class="hero-item-val">${s.orderCount||0}</div><div class="hero-item-label">발주건수</div></div>
+        <div class="hero-item"><div class="hero-item-val">${s.clientsOrdered||0}</div><div class="hero-item-label">거래처수</div></div>
+        <div class="hero-item"><div class="hero-item-val">₩${fmtK(s.totalProfit||0)}</div><div class="hero-item-label">손익</div></div>
+      </div>
+    </div>`;
+
+  // KPI
+  document.getElementById('home-kpi').innerHTML = `
+    <div class="kpi" style="--accent:#1D9E75"><div class="kpi-icon">🏪</div><div class="kpi-val">${s.totalClients||clients.length}<span class="kpi-unit">곳</span></div><div class="kpi-label">전체 거래처</div><div class="kpi-sub">거래중 ${s.activeClients||0}곳</div></div>
+    <div class="kpi" style="--accent:#F5A623"><div class="kpi-icon">📋</div><div class="kpi-val">${s.pipelineCount||(_data.pipeline||[]).length}<span class="kpi-unit">건</span></div><div class="kpi-label">영업 파이프라인</div><div class="kpi-sub">진행 중</div></div>
+    <div class="kpi" style="--accent:#5FD4A8"><div class="kpi-icon">📦</div><div class="kpi-val">${s.avgKg||0}<span class="kpi-unit">kg</span></div><div class="kpi-label">평균 발주량/건</div><div class="kpi-sub">${monthLabel} 기준</div></div>
+    <div class="kpi" style="--accent:#E24B4A"><div class="kpi-icon">💰</div><div class="kpi-val">${s.profitRate||0}<span class="kpi-unit">%</span></div><div class="kpi-label">손익률</div><div class="kpi-sub">₩${fmtK(s.totalProfit||0)} 이익</div></div>`;
+
+  // 원두 분포
+  const bc = s.beanCount || {};
+  const bEntries = Object.entries(bc).sort((a,b)=>b[1]-a[1]);
+  const bMax = bEntries[0]?.[1] || 1;
+  document.getElementById('home-beans').innerHTML = bEntries.length
+    ? bEntries.map(([b,n]) => `
+      <div class="bean-row">
+        <div class="bean-name">${b}</div>
+        <div class="bean-bar-bg"><div class="bean-bar-fill" data-w="${Math.round(n/bMax*100)}" style="background:${BEAN_COLORS[b]||'var(--grn)'}"><span>${n}곳</span></div></div>
+        <div class="bean-cnt">${n}</div>
+      </div>`).join('')
+    : '<div class="empty">데이터 없음</div>';
+
+  // 손익
+  document.getElementById('home-profit').innerHTML = `
+    <div class="profit-card"><div class="profit-val" style="color:var(--grn)">₩${fmtK(s.totalSales||0)}</div><div class="profit-label">총 매출<br>(VAT 제외)</div></div>
+    <div class="profit-card"><div class="profit-val" style="color:var(--muted)">-</div><div class="profit-label">총 매입<br>(VAT 포함)</div></div>
+    <div class="profit-card"><div class="profit-val" style="color:var(--amb)">₩${fmtK(s.totalProfit||0)}</div><div class="profit-label">순 손익<br>${s.profitRate||0}%</div></div>`;
+
+  // 최근 발주 (5건)
+  const recent = [...(orders)].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  document.getElementById('home-recent').innerHTML = recent.length
+    ? recent.map(o => tlRow(o)).join('')
+    : '<div class="empty">발주 기록 없음</div>';
+
+  setTimeout(animateBars, 100);
+}
+
+// ══════════════════════════════════════════
+//  거래처 렌더
+// ══════════════════════════════════════════
+let _clientQuery = '';
+function filterClients(q) { _clientQuery = q; _showAll = true; renderClients(); }
+function showAllClients() { _showAll = true; renderClients(); }
+
+function renderClients() {
+  const clients = _data.clients || [];
+  const orders  = _data.orders  || [];
+  const q = _clientQuery.trim();
+
+  let list = clients.filter(c =>
+    !q || c.name.includes(q) || (c.manager||'').includes(q) || (c.bean||'').includes(q)
+  );
+
+  // 발주량 계산
+  const kgMap = {};
+  orders.forEach(o => { kgMap[o.clientId] = (kgMap[o.clientId]||0) + (o.qty||0); });
+  list = list.map(c => ({...c, totalKg: kgMap[c.id]||0})).sort((a,b)=>b.totalKg-a.totalKg);
+
+  document.getElementById('clients-sub').textContent = `${clients.length}개 등록`;
+  const visible = (_showAll||q) ? list : list.slice(0,8);
+  const btn = document.getElementById('show-more-btn');
+  btn.style.display = (!q && !_showAll && list.length > 8) ? 'block' : 'none';
+
+  const ranks = ['🥇','🥈','🥉'];
+  document.getElementById('client-list').innerHTML = visible.length
+    ? visible.map((c,i) => {
+        const col = AV_COLORS[i % AV_COLORS.length];
+        const beanStr = Array.isArray(c.beans) ? c.beans.join(' · ') : (c.bean||'');
+        return `<div class="client-card">
+          <div class="client-av" style="background:${col};">${i<3&&!q?c.name[0]:c.name[0]}</div>
+          <div class="client-info">
+            <div class="client-name">${i<3&&!q?ranks[i]+' ':''}${c.name}</div>
+            <div class="client-sub">${c.manager||'-'} · ${c.phone||'-'}</div>
+            ${beanStr?`<span class="client-bean">${beanStr}</span>`:''}
+          </div>
+          <div class="client-r">
+            <div class="client-kg">${c.totalKg}<span style="font-size:11px;color:var(--muted)">kg</span></div>
+            <div class="client-kglabel">총 발주</div>
+          </div>
+        </div>`;
+      }).join('')
+    : '<div class="empty">거래처 없음</div>';
+}
+
+// ══════════════════════════════════════════
+//  발주 렌더
+// ══════════════════════════════════════════
+function renderOrders() {
+  const orders = [...(_data.orders||[])].sort((a,b)=>b.date.localeCompare(a.date));
+
+  // 월 목록
+  const months = [...new Set(orders.map(o=>o.date?.slice(0,7)).filter(Boolean))].sort().reverse();
+  if (!_orderMonth && months.length) _orderMonth = months[0];
+
+  const chips = document.getElementById('month-chips');
+  chips.innerHTML = ['전체',...months].map(m => {
+    const label = m==='전체' ? '전체' : m.replace('-','년 ')+'월';
+    const on = m === (_orderMonth||'전체');
+    return `<button class="chip${on?' on':''}" onclick="setOrderMonth('${m}',this)">${label}</button>`;
+  }).join('');
+
+  const filtered = _orderMonth && _orderMonth!=='전체'
+    ? orders.filter(o=>o.date?.slice(0,7)===_orderMonth)
+    : orders;
+
+  const totalKg = filtered.reduce((s,o)=>s+(o.qty||0),0);
+  const totalCnt = filtered.length;
+  document.getElementById('orders-sub').textContent =
+    `${_orderMonth||'전체'} · ${totalCnt}건 · ${totalKg}kg`;
+
+  let prev = '';
+  document.getElementById('order-timeline').innerHTML = filtered.length
+    ? filtered.map(o => {
+        const showDate = o.date !== prev;
+        prev = o.date;
+        return `${showDate?`<div class="tl-item" style="padding-bottom:4px;"><div class="tl-date" style="font-size:11px;font-weight:700;color:var(--muted);padding:6px 0 2px 0;">${o.date}</div></div>`:''}${tlRow(o)}`;
+      }).join('')
+    : '<div class="empty">발주 기록 없음</div>';
+}
+
+function setOrderMonth(m, btn) {
+  _orderMonth = m==='전체' ? '' : m;
+  document.querySelectorAll('#month-chips .chip').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderOrders();
+}
+
+// ══════════════════════════════════════════
+//  파이프라인 렌더
+// ══════════════════════════════════════════
+function renderPipeline() {
+  const pipeline = _data.pipeline || [];
+  const filtered = _pipeFilter==='전체' ? pipeline : pipeline.filter(p=>p.status===_pipeFilter);
+  document.getElementById('pipe-sub').textContent = `${pipeline.length}건 진행 중`;
+  document.getElementById('pipe-list').innerHTML = filtered.length
+    ? filtered.map(p => {
+        const s = STATUS_STYLE[p.status] || STATUS_STYLE['진행중'];
+        return `<div class="pipe-card">
+          <div class="pipe-row">
+            <div class="pipe-name">${p.name}</div>
+            <div class="pipe-status" style="background:${s.bg};color:${s.color}">${p.status}</div>
+          </div>
+          ${p.bean?`<div class="pipe-bean">☕ ${p.bean}</div>`:''}
+          ${p.note?`<div class="pipe-note">${p.note}</div>`:''}
+        </div>`;
+      }).join('')
+    : '<div class="empty">해당 항목 없음</div>';
+}
+
+function filterPipe(status, btn) {
+  _pipeFilter = status;
+  document.querySelectorAll('.chip-wrap .chip').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderPipeline();
+}
+
+// ══════════════════════════════════════════
+//  헬퍼
+// ══════════════════════════════════════════
+function tlRow(o) {
+  const col = BEAN_COLORS[o.bean] || 'var(--grn)';
+  const profit = o.profit ? `+${fmtK(o.profit)}` : '';
+  return `<div class="tl-item">
+    <div class="tl-card">
+      <div class="tl-bean" style="background:${col.includes('gradient')?col:col+'22'};color:#fff;background:${col}">${o.bean||'-'}</div>
+      <div class="tl-name">${o.clientName||o.name||''}</div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div class="tl-kg">${o.qty||0}<span style="font-size:11px;color:var(--muted)">kg</span></div>
+        ${profit?`<div class="tl-profit">${profit}</div>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+function fmt(n)  { return Number(n).toLocaleString('ko-KR'); }
+function fmtK(n) { return n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(0)+'K' : String(n); }
+
+function animateBars() {
+  document.querySelectorAll('.bean-bar-fill').forEach(el => {
+    setTimeout(()=>{ el.style.width = (el.dataset.w||0)+'%'; }, 200);
+  });
+}
+
+// ══════════════════════════════════════════
+//  탭 전환
+// ══════════════════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo(0,0);
+  if (name==='home') animateBars();
+}
+
+// ══════════════════════════════════════════
+//  초기화
+// ══════════════════════════════════════════
+initUrlBanner();
+
+// 캐시 먼저 렌더
+const cache = localStorage.getItem('bf_cache');
+if (cache) {
+  try { _data = JSON.parse(cache); renderAll(); setSyncState('live'); } catch(e) {}
+}
+
+// 구글 시트 연결되어 있으면 바로 동기화
+if (API_URL) {
+  syncData();
+  startAutoSync();
+} else {
+  // 샘플 데이터로 UI 미리보기
+  _data = {
+    clients: [{id:1,name:'카페 은하수',beans:['모닝듀'],manager:'박지안',phone:'010-9432-9139'},{id:2,name:'(주)명성 더 에스오피',beans:['레인포레스트'],manager:'명재홍',phone:'010-8993-9187'},{id:3,name:'(주) 티티클럽',beans:['미스트','디카페인'],manager:'우차희',phone:'010-5621-3353'}],
+    orders: [{id:1,clientId:1,clientName:'카페 은하수',date:'2026-04-27',bean:'모닝듀',qty:40,profit:110000},{id:2,clientId:2,clientName:'(주)명성 더 에스오피',date:'2026-04-28',bean:'레인포레스트',qty:40,profit:176000},{id:3,clientId:3,clientName:'(주) 티티클럽',date:'2026-04-28',bean:'미스트',qty:20,profit:143000}],
+    pipeline: [{id:1,name:'빵선생 운서역점',bean:'선사인',status:'샘플제안',note:'샘플 제안'},{id:2,name:'SOS',bean:'선셋 · 아우라',status:'테스트중',note:'통화 완료 테스트 요청'}],
+    summary: {month:'2026-04',totalClients:22,activeClients:19,clientsOrdered:8,totalKg:180,totalSales:3847500,totalProfit:739750,profitRate:19,orderCount:12,avgKg:15,pipelineCount:25,beanCount:{'미스트':9,'선사인':5,'레인포레스트':4,'모닝듀':3,'아우라':2,'선셋':2,'디카페인':1},beanKg:{}}
+  };
+  renderAll();
+}
+</script>
+</body>
+</html>
