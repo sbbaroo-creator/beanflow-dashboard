@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>빈플로우 대시보드</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root {
   --grn:#1D9E75;--grn2:#0F6E56;--grn3:#E1F5EE;
@@ -140,6 +141,50 @@ body::before{content:'';position:fixed;top:-200px;left:-200px;width:600px;height
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 .skeleton{background:linear-gradient(90deg,var(--surf) 25%,var(--surf2) 50%,var(--surf) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:10px;}
 @keyframes shimmer{to{background-position:-200% 0;}}
+
+/* ── 월별 차트 */
+.chart-card{background:var(--surf);border:1px solid var(--hint);border-radius:16px;padding:16px;margin-bottom:4px;}
+.chart-wrap{position:relative;height:200px;margin-top:10px;}
+.chart-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;}
+.chart-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+.chart-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* ── 발주 예측 */
+.predict-list{display:flex;flex-direction:column;gap:8px;}
+.predict-card{background:var(--surf);border:1px solid var(--hint);border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:12px;transition:.15s;}
+.predict-card.urgent{border-color:rgba(226,75,74,.4);background:linear-gradient(135deg,#1a0f0f,var(--surf));}
+.predict-card.soon{border-color:rgba(245,166,35,.4);background:linear-gradient(135deg,#1a1400,var(--surf));}
+.predict-card.ok{border-color:var(--hint);}
+.predict-av{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;color:#fff;}
+.predict-info{flex:1;min-width:0;}
+.predict-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.predict-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.predict-r{text-align:right;flex-shrink:0;}
+.predict-days{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;}
+.predict-label{font-size:9px;color:var(--muted);margin-top:1px;}
+.predict-badge{display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700;margin-top:3px;}
+
+/* ── 미발주 알림 */
+.overdue-banner{background:linear-gradient(135deg,#2d0f0f,#3d1515);border:1.5px solid var(--red);border-radius:16px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden;}
+.overdue-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),#FF6B6B,var(--red));animation:scanline 2s linear infinite;}
+@keyframes scanline{0%{background-position:0% 0;}100%{background-position:200% 0;}}
+.overdue-banner-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.overdue-banner-title{font-size:13px;font-weight:700;color:var(--red);display:flex;align-items:center;gap:6px;}
+.overdue-cnt{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--red);line-height:1;}
+.overdue-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(226,75,74,.2);}
+.overdue-item:last-child{border-bottom:none;}
+.overdue-av{width:34px;height:34px;border-radius:10px;background:rgba(226,75,74,.2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--red);flex-shrink:0;}
+.overdue-info{flex:1;min-width:0;}
+.overdue-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.overdue-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.overdue-days{text-align:right;flex-shrink:0;}
+.overdue-days-val{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--red);line-height:1;}
+.overdue-days-label{font-size:9px;color:var(--muted);}
+.overdue-tag{display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700;}
+.tag-danger{background:rgba(226,75,74,.2);color:var(--red);}
+.tag-warn{background:rgba(245,166,35,.2);color:var(--amb);}
+.client-card.overdue{border-color:rgba(226,75,74,.4);background:linear-gradient(135deg,#1a0f0f,var(--surf));}
+.overdue-show-more{width:100%;padding:8px;background:rgba(226,75,74,.1);border:1px solid rgba(226,75,74,.3);border-radius:10px;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;margin-top:8px;font-family:'Noto Sans KR',sans-serif;}
 </style>
 </head>
 <body>
@@ -172,6 +217,23 @@ body::before{content:'';position:fixed;top:-200px;left:-200px;width:600px;height
   <div class="bean-list" id="home-beans"></div>
   <div class="sec"><div class="sec-label">💰 이번 달 손익</div><div class="sec-line"></div></div>
   <div class="profit-grid" id="home-profit"></div>
+  <div class="sec"><div class="sec-label">📈 월별 매출 추이</div><div class="sec-line"></div></div>
+  <div class="chart-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:11px;color:var(--muted);">최근 6개월 매출 · 발주량</div>
+      <div style="display:flex;gap:5px;">
+        <button class="chip" id="chart-btn-sales" onclick="switchChart('sales',this)" style="padding:4px 10px;font-size:10px;">매출</button>
+        <button class="chip on" id="chart-btn-kg" onclick="switchChart('kg',this)" style="padding:4px 10px;font-size:10px;">발주량</button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="monthly-chart"></canvas></div>
+  </div>
+
+  <div class="sec"><div class="sec-label">🔮 발주 예측</div><div class="sec-line"></div></div>
+  <div class="predict-list" id="home-predict"></div>
+
+  <div class="sec"><div class="sec-label">🚨 미발주 주의 (30일+)</div><div class="sec-line"></div></div>
+  <div id="home-overdue"></div>
   <div class="sec"><div class="sec-label">📅 최근 발주</div><div class="sec-line"></div></div>
   <div class="timeline" id="home-recent"></div>
 </div>
@@ -180,6 +242,11 @@ body::before{content:'';position:fixed;top:-200px;left:-200px;width:600px;height
 <div class="page" id="page-clients">
   <div class="hdr"><div><div class="hdr-logo">거래처</div><div class="hdr-sub" id="clients-sub">로딩 중...</div></div></div>
   <input class="search-box" type="text" placeholder="🔍 거래처명 · 담당자 검색..." oninput="filterClients(this.value)">
+  <div class="chip-wrap">
+    <button class="chip on" id="cf-all" onclick="setClientFilter('전체',this)">전체</button>
+    <button class="chip" id="cf-overdue" onclick="setClientFilter('미발주',this)">🚨 미발주 30일+</button>
+    <button class="chip" id="cf-ok" onclick="setClientFilter('정상',this)">✅ 정상</button>
+  </div>
   <div class="client-list" id="client-list"></div>
   <button class="show-more" id="show-more-btn" onclick="showAllClients()" style="display:none">더보기 ▼</button>
 </div>
@@ -225,6 +292,8 @@ let _showAll = false;
 let _pipeFilter = '전체';
 let _orderMonth = '';
 let _syncTimer  = null;
+let _clientFilter = '전체';
+const OVERDUE_DAYS = 30; // 미발주 기준일
 
 const AV_COLORS = ['#1D9E75','#378ADD','#D85A30','#7F77DD','#F5A623','#D4537E','#639922','#5F5E5A','#2DC88F','#F97316'];
 const BEAN_COLORS = {
@@ -348,11 +417,18 @@ function renderHome() {
     </div>`;
 
   // KPI
+  const overdueList = calcOverdue(clients, orders).filter(c=>c.isOverdue);
+  const overdueCount = overdueList.length;
   document.getElementById('home-kpi').innerHTML = `
     <div class="kpi" style="--accent:#1D9E75"><div class="kpi-icon">🏪</div><div class="kpi-val">${s.totalClients||clients.length}<span class="kpi-unit">곳</span></div><div class="kpi-label">전체 거래처</div><div class="kpi-sub">거래중 ${s.activeClients||0}곳</div></div>
-    <div class="kpi" style="--accent:#F5A623"><div class="kpi-icon">📋</div><div class="kpi-val">${s.pipelineCount||(_data.pipeline||[]).length}<span class="kpi-unit">건</span></div><div class="kpi-label">영업 파이프라인</div><div class="kpi-sub">진행 중</div></div>
+    <div class="kpi" style="--accent:#E24B4A;${overdueCount>0?'background:linear-gradient(135deg,#1a0f0f,var(--surf));border-color:rgba(226,75,74,.3);':''}" onclick="switchTab('clients',document.querySelectorAll('.tab-btn')[1]);setClientFilter('미발주',document.getElementById('cf-overdue'))" style="cursor:pointer">
+      <div class="kpi-icon">🚨</div>
+      <div class="kpi-val" style="color:${overdueCount>0?'var(--red)':'var(--grn)'}">${overdueCount}<span class="kpi-unit">곳</span></div>
+      <div class="kpi-label">미발주 30일+</div>
+      <div class="kpi-sub">${overdueCount>0?'탭해서 확인':'모두 정상 ✓'}</div>
+    </div>
     <div class="kpi" style="--accent:#5FD4A8"><div class="kpi-icon">📦</div><div class="kpi-val">${s.avgKg||0}<span class="kpi-unit">kg</span></div><div class="kpi-label">평균 발주량/건</div><div class="kpi-sub">${monthLabel} 기준</div></div>
-    <div class="kpi" style="--accent:#E24B4A"><div class="kpi-icon">💰</div><div class="kpi-val">${s.profitRate||0}<span class="kpi-unit">%</span></div><div class="kpi-label">손익률</div><div class="kpi-sub">₩${fmtK(s.totalProfit||0)} 이익</div></div>`;
+    <div class="kpi" style="--accent:#F5A623"><div class="kpi-icon">📋</div><div class="kpi-val">${s.pipelineCount||(_data.pipeline||[]).length}<span class="kpi-unit">건</span></div><div class="kpi-label">파이프라인</div><div class="kpi-sub">진행 중</div></div>`;
 
   // 원두 분포
   const bc = s.beanCount || {};
@@ -367,10 +443,11 @@ function renderHome() {
       </div>`).join('')
     : '<div class="empty">데이터 없음</div>';
 
-  // 손익
+  // 손익 — summary에서 직접 가져오기
+  const buyDisplay = s.totalBuyTotal || s.totalVat || 0;
   document.getElementById('home-profit').innerHTML = `
     <div class="profit-card"><div class="profit-val" style="color:var(--grn)">₩${fmtK(s.totalSales||0)}</div><div class="profit-label">총 매출<br>(VAT 제외)</div></div>
-    <div class="profit-card"><div class="profit-val" style="color:var(--muted)">-</div><div class="profit-label">총 매입<br>(VAT 포함)</div></div>
+    <div class="profit-card"><div class="profit-val" style="color:var(--muted)">₩${fmtK(buyDisplay)}</div><div class="profit-label">총 매입<br>(VAT 포함)</div></div>
     <div class="profit-card"><div class="profit-val" style="color:var(--amb)">₩${fmtK(s.totalProfit||0)}</div><div class="profit-label">순 손익<br>${s.profitRate||0}%</div></div>`;
 
   // 최근 발주 (5건)
@@ -379,7 +456,69 @@ function renderHome() {
     ? recent.map(o => tlRow(o)).join('')
     : '<div class="empty">발주 기록 없음</div>';
 
+  // 미발주 섹션
+  renderHomeOverdue();
+  // 월별 차트
+  renderMonthlyChart('kg');
+  // 발주 예측
+  renderPredict();
   setTimeout(animateBars, 100);
+}
+
+// ══════════════════════════════════════════
+//  홈 미발주 렌더
+// ══════════════════════════════════════════
+function renderHomeOverdue() {
+  const el = document.getElementById('home-overdue');
+  if (!el) return;
+  const withOverdue = calcOverdue(_data.clients||[], _data.orders||[]);
+  const overdue = withOverdue.filter(c => c.isOverdue).sort((a,b) => b.daysSince - a.daysSince);
+
+  if (!overdue.length) {
+    el.innerHTML = `<div style="background:rgba(29,158,117,.08);border:1px solid rgba(29,158,117,.2);border-radius:14px;padding:14px;text-align:center;font-size:13px;color:var(--grn);margin-bottom:4px;">✅ 30일 이상 미발주 거래처 없음</div>`;
+    return;
+  }
+
+  const visible = overdue.slice(0, 5);
+  const hidden  = overdue.slice(5);
+
+  el.innerHTML = `
+    <div class="overdue-banner">
+      <div class="overdue-banner-hd">
+        <div class="overdue-banner-title">⚠ 즉시 연락 필요</div>
+        <div style="text-align:right;">
+          <div class="overdue-cnt">${overdue.length}<span style="font-size:14px;font-weight:400;color:var(--muted)">곳</span></div>
+          <div style="font-size:10px;color:var(--muted);">30일 이상 미발주</div>
+        </div>
+      </div>
+      ${visible.map(c => overdueItem(c)).join('')}
+      ${hidden.length ? `
+        <div id="home-overdue-hidden" style="display:none">${hidden.map(c => overdueItem(c)).join('')}</div>
+        <button class="overdue-show-more" onclick="
+          document.getElementById('home-overdue-hidden').style.display='block';
+          this.style.display='none';
+        ">+ ${hidden.length}곳 더보기 ▼</button>` : ''}
+    </div>`;
+}
+
+function overdueItem(c) {
+  const isVeryLate = c.daysSince >= 60;
+  const tagClass   = isVeryLate ? 'tag-danger' : 'tag-warn';
+  const tagLabel   = isVeryLate ? '60일+' : '30일+';
+  const daysColor  = isVeryLate ? 'var(--red)' : 'var(--amb)';
+  return `<div class="overdue-item">
+    <div class="overdue-av">${c.name[0]}</div>
+    <div class="overdue-info">
+      <div class="overdue-name">${c.name}</div>
+      <div class="overdue-sub">${c.manager||'-'} · 마지막: ${c.lastDate||'기록없음'}
+        <span class="overdue-tag ${tagClass}" style="margin-left:4px">${tagLabel}</span>
+      </div>
+    </div>
+    <div class="overdue-days">
+      <div class="overdue-days-val" style="color:${daysColor}">${c.daysSince >= 999 ? '∞' : c.daysSince}</div>
+      <div class="overdue-days-label">일 경과</div>
+    </div>
+  </div>`;
 }
 
 // ══════════════════════════════════════════
@@ -388,22 +527,45 @@ function renderHome() {
 let _clientQuery = '';
 function filterClients(q) { _clientQuery = q; _showAll = true; renderClients(); }
 function showAllClients() { _showAll = true; renderClients(); }
+function setClientFilter(f, btn) {
+  _clientFilter = f;
+  document.querySelectorAll('#page-clients .chip').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  _showAll = true;
+  renderClients();
+}
 
 function renderClients() {
-  const clients = _data.clients || [];
-  const orders  = _data.orders  || [];
+  const orders = _data.orders || [];
   const q = _clientQuery.trim();
 
-  let list = clients.filter(c =>
-    !q || c.name.includes(q) || (c.manager||'').includes(q) || (c.bean||'').includes(q)
-  );
+  // 미발주 계산 포함
+  let list = calcOverdue(_data.clients||[], orders);
 
-  // 발주량 계산
+  // 검색 필터
+  if (q) list = list.filter(c => c.name.includes(q) || (c.manager||'').includes(q));
+
+  // 미발주 필터
+  if (_clientFilter === '미발주') list = list.filter(c => c.isOverdue);
+  else if (_clientFilter === '정상') list = list.filter(c => !c.isOverdue);
+
+  // 발주량 계산 + 정렬
   const kgMap = {};
   orders.forEach(o => { kgMap[o.clientId] = (kgMap[o.clientId]||0) + (o.qty||0); });
-  list = list.map(c => ({...c, totalKg: kgMap[c.id]||0})).sort((a,b)=>b.totalKg-a.totalKg);
+  list = list.map(c => ({...c, totalKg: kgMap[c.id]||0}));
 
-  document.getElementById('clients-sub').textContent = `${clients.length}개 등록`;
+  // 미발주 필터일 땐 경과일 기준, 아니면 발주량 기준
+  if (_clientFilter === '미발주') list.sort((a,b) => b.daysSince - a.daysSince);
+  else list.sort((a,b) => b.totalKg - a.totalKg);
+
+  const overdueCount = calcOverdue(_data.clients||[], orders).filter(c=>c.isOverdue).length;
+  document.getElementById('clients-sub').textContent =
+    `${(_data.clients||[]).length}개 등록 · 미발주 ${overdueCount}곳`;
+
+  // 미발주 필터 뱃지 업데이트
+  const odBtn = document.getElementById('cf-overdue');
+  if (odBtn) odBtn.textContent = `🚨 미발주 30일+ (${overdueCount})`;
+
   const visible = (_showAll||q) ? list : list.slice(0,8);
   const btn = document.getElementById('show-more-btn');
   btn.style.display = (!q && !_showAll && list.length > 8) ? 'block' : 'none';
@@ -411,22 +573,35 @@ function renderClients() {
   const ranks = ['🥇','🥈','🥉'];
   document.getElementById('client-list').innerHTML = visible.length
     ? visible.map((c,i) => {
-        const col = AV_COLORS[i % AV_COLORS.length];
+        const col = c.isOverdue ? '#E24B4A' : AV_COLORS[i % AV_COLORS.length];
         const beanStr = Array.isArray(c.beans) ? c.beans.join(' · ') : (c.bean||'');
-        return `<div class="client-card">
-          <div class="client-av" style="background:${col};">${i<3&&!q?c.name[0]:c.name[0]}</div>
+        const overdueTag = c.isOverdue
+          ? `<span style="margin-left:6px;background:rgba(226,75,74,.2);color:var(--red);font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;">${c.daysSince>=999?'미발주':c.daysSince+'일 경과'}</span>`
+          : '';
+        const lastInfo = c.lastDate
+          ? `마지막: ${c.lastDate}`
+          : '발주 기록 없음';
+        return `<div class="client-card${c.isOverdue?' overdue':''}">
+          <div class="client-av" style="background:${col};">${c.name[0]}</div>
           <div class="client-info">
-            <div class="client-name">${i<3&&!q?ranks[i]+' ':''}${c.name}</div>
+            <div class="client-name">
+              ${_clientFilter!=='미발주'&&i<3&&!q?ranks[i]+' ':''}${c.name}${overdueTag}
+            </div>
             <div class="client-sub">${c.manager||'-'} · ${c.phone||'-'}</div>
-            ${beanStr?`<span class="client-bean">${beanStr}</span>`:''}
+            <div style="margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              ${beanStr?`<span class="client-bean">${beanStr}</span>`:''}
+              <span style="font-size:10px;color:${c.isOverdue?'var(--red)':'var(--hint)'};">${lastInfo}</span>
+            </div>
           </div>
           <div class="client-r">
-            <div class="client-kg">${c.totalKg}<span style="font-size:11px;color:var(--muted)">kg</span></div>
+            <div class="client-kg" style="color:${c.isOverdue?'var(--red)':'var(--grn)'}">
+              ${c.totalKg}<span style="font-size:11px;color:var(--muted)">kg</span>
+            </div>
             <div class="client-kglabel">총 발주</div>
           </div>
         </div>`;
       }).join('')
-    : '<div class="empty">거래처 없음</div>';
+    : `<div class="empty">${_clientFilter==='미발주'?'✅ 미발주 거래처 없음':'거래처 없음'}</div>`;
 }
 
 // ══════════════════════════════════════════
@@ -518,6 +693,216 @@ function tlRow(o) {
     </div>
   </div>`;
 }
+
+// ══════════════════════════════════════════
+//  월별 매출 추이 차트
+// ══════════════════════════════════════════
+let _chartInstance = null;
+let _chartMode = 'kg';
+
+function switchChart(mode, btn) {
+  _chartMode = mode;
+  document.querySelectorAll('#monthly-chart').forEach(()=>{});
+  document.getElementById('chart-btn-sales').className = 'chip' + (mode==='sales'?' on':'');
+  document.getElementById('chart-btn-kg').className    = 'chip' + (mode==='kg'?' on':'');
+  renderMonthlyChart(mode);
+}
+
+function renderMonthlyChart(mode) {
+  const canvas = document.getElementById('monthly-chart');
+  if (!canvas) return;
+  if (_chartInstance) { _chartInstance.destroy(); _chartInstance = null; }
+
+  const orders = _data.orders || [];
+  const now = new Date();
+
+  // 최근 6개월 레이블 생성
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      key: d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'),
+      label: (d.getMonth()+1) + '월'
+    });
+  }
+
+  // 월별 집계
+  const dataPoints = months.map(m => {
+    const mo = orders.filter(o => o.date?.slice(0,7) === m.key);
+    return {
+      sales: mo.reduce((s,o) => s + (o.total||0), 0),
+      kg:    mo.reduce((s,o) => s + (o.qty||0), 0),
+      cnt:   mo.length,
+    };
+  });
+
+  const labels = months.map(m => m.label);
+  const values = dataPoints.map(d => mode === 'sales' ? d.sales : d.kg);
+  const maxVal = Math.max(...values, 1);
+
+  const isDark = true;
+  const gridColor = 'rgba(255,255,255,0.06)';
+  const textColor = '#8B949E';
+  const lineColor = mode === 'sales' ? '#F5A623' : '#1D9E75';
+  const bgColor   = mode === 'sales' ? 'rgba(245,166,35,0.15)' : 'rgba(29,158,117,0.15)';
+
+  _chartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: mode === 'sales' ? '매출(원)' : '발주량(kg)',
+        data: values,
+        borderColor: lineColor,
+        backgroundColor: bgColor,
+        borderWidth: 2.5,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: lineColor,
+        pointBorderColor: '#0D1117',
+        pointBorderWidth: 2,
+        fill: true,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#21262D',
+          borderColor: '#30363D',
+          borderWidth: 1,
+          titleColor: '#F0F6FC',
+          bodyColor: '#8B949E',
+          callbacks: {
+            label: ctx => mode === 'sales'
+              ? ' ₩' + ctx.parsed.y.toLocaleString('ko-KR')
+              : ' ' + ctx.parsed.y + 'kg'
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: gridColor },
+          ticks: { color: textColor, font: { size: 11 } }
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: {
+            color: textColor,
+            font: { size: 10 },
+            callback: v => mode === 'sales'
+              ? '₩' + (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v)
+              : v + 'kg'
+          },
+          beginAtZero: true,
+        }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+//  발주 예측
+// ══════════════════════════════════════════
+function renderPredict() {
+  const el = document.getElementById('home-predict');
+  if (!el) return;
+  const clients = _data.clients || [];
+  const orders  = _data.orders  || [];
+  const today   = new Date(); today.setHours(0,0,0,0);
+
+  const predictions = clients.map(c => {
+    const co = orders.filter(o => o.clientId === c.id)
+                     .sort((a,b) => a.date.localeCompare(b.date));
+    if (co.length < 2) return null; // 2건 이상 있어야 예측 가능
+
+    // 평균 발주 간격 계산
+    const gaps = [];
+    for (let i = 1; i < co.length; i++) {
+      gaps.push((new Date(co[i].date) - new Date(co[i-1].date)) / 86400000);
+    }
+    const avgGap = Math.round(gaps.reduce((a,b)=>a+b,0) / gaps.length);
+    if (avgGap <= 0) return null;
+
+    const lastDate    = new Date(co[co.length-1].date);
+    const nextDate    = new Date(lastDate);
+    nextDate.setDate(nextDate.getDate() + avgGap);
+    const daysUntil   = Math.round((nextDate - today) / 86400000);
+    const lastBean    = co[co.length-1].bean || '';
+    const avgKg       = Math.round(co.reduce((s,o)=>s+(o.qty||0),0) / co.length);
+
+    return {
+      c, avgGap, nextDate, daysUntil, lastBean, avgKg,
+      lastDateStr: co[co.length-1].date,
+    };
+  }).filter(Boolean).sort((a,b) => a.daysUntil - b.daysUntil);
+
+  if (!predictions.length) {
+    el.innerHTML = '<div class="empty">발주 이력이 2건 이상인 거래처가 없어요</div>';
+    return;
+  }
+
+  const fmt = d => {
+    const dt = new Date(d);
+    return `${dt.getMonth()+1}/${dt.getDate()}`;
+  };
+
+  el.innerHTML = predictions.slice(0, 8).map((p, i) => {
+    const isUrgent = p.daysUntil <= 3;
+    const isSoon   = p.daysUntil <= 7 && !isUrgent;
+    const cardClass = isUrgent ? 'urgent' : isSoon ? 'soon' : 'ok';
+    const avBg      = isUrgent ? '#E24B4A' : isSoon ? '#F5A623' : AV_COLORS[i % AV_COLORS.length];
+    const daysColor = isUrgent ? 'var(--red)' : isSoon ? 'var(--amb)' : 'var(--grn)';
+    const badge     = isUrgent
+      ? '<span class="predict-badge" style="background:rgba(226,75,74,.2);color:var(--red)">🔴 즉시 연락</span>'
+      : isSoon
+      ? '<span class="predict-badge" style="background:rgba(245,166,35,.2);color:var(--amb)">🟡 곧 발주</span>'
+      : '<span class="predict-badge" style="background:rgba(29,158,117,.15);color:var(--grn)">✅ 여유</span>';
+    const daysLabel = p.daysUntil < 0
+      ? `${Math.abs(p.daysUntil)}일 지남`
+      : p.daysUntil === 0
+      ? '오늘!'
+      : `${p.daysUntil}일 후`;
+
+    return `<div class="predict-card ${cardClass}">
+      <div class="predict-av" style="background:${avBg}">${p.c.name[0]}</div>
+      <div class="predict-info">
+        <div class="predict-name">${p.c.name}</div>
+        <div class="predict-sub">
+          평균 ${p.avgGap}일 주기 · 평균 ${p.avgKg}kg · ${p.lastBean||'-'}
+        </div>
+        <div class="predict-sub" style="margin-top:2px;">
+          마지막 발주: ${p.lastDateStr} → 예상: ${fmt(p.nextDate)}
+        </div>
+        ${badge}
+      </div>
+      <div class="predict-r">
+        <div class="predict-days" style="color:${daysColor}">${p.daysUntil<0?'↑'+Math.abs(p.daysUntil):p.daysUntil===0?'D-0':p.daysUntil}</div>
+        <div class="predict-label">${p.daysUntil<0?'일 초과':p.daysUntil===0?'오늘':'일 남음'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  미발주 계산
+// ══════════════════════════════════════════
+function calcOverdue(clients, orders) {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return clients.map(c => {
+    const clientOrders = orders.filter(o => o.clientId === c.id).sort((a,b) => b.date.localeCompare(a.date));
+    const lastOrder = clientOrders[0];
+    const lastDate  = lastOrder ? new Date(lastOrder.date) : null;
+    const days = lastDate ? Math.floor((today - lastDate) / 86400000) : 999;
+    return { ...c, lastDate: lastOrder?.date || null, lastBean: lastOrder?.bean || '', daysSince: days, isOverdue: days >= OVERDUE_DAYS };
+  });
+}
+
 function fmt(n)  { return Number(n).toLocaleString('ko-KR'); }
 function fmtK(n) { return n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(0)+'K' : String(n); }
 
@@ -536,7 +921,10 @@ function switchTab(name, btn) {
   document.getElementById('page-'+name).classList.add('active');
   btn.classList.add('active');
   window.scrollTo(0,0);
-  if (name==='home') animateBars();
+  if (name==='home') {
+    animateBars();
+    setTimeout(() => renderMonthlyChart(_chartMode), 100);
+  }
 }
 
 // ══════════════════════════════════════════
