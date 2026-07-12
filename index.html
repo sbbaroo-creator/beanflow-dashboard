@@ -286,7 +286,7 @@ body::before{content:'';position:fixed;top:-200px;left:-200px;width:600px;height
 // ══════════════════════════════════════════
 //  상태
 // ══════════════════════════════════════════
-let API_URL  = localStorage.getItem('bf_api') || '';
+let API_URL  = localStorage.getItem('bf_api') || 'https://script.google.com/macros/s/AKfycbwFKC1LdgvuYyixNiiVhor-EaOSffXRWoNX5E62ZcmTyZvbE6C1fqZnqCemmPE3BCOW/exec';
 let _data    = { clients:[], orders:[], pipeline:[], summary:{} };
 let _showAll = false;
 let _pipeFilter = '전체';
@@ -328,10 +328,11 @@ function saveUrl() {
 }
 
 function initUrlBanner() {
-  if (API_URL) {
-    document.getElementById('url-banner').style.display = 'none';
-    document.getElementById('api-url-input').value = API_URL;
-  }
+  // URL이 내장되어 있으므로 배너 항상 숨김
+  const banner = document.getElementById('url-banner');
+  if (banner) banner.style.display = 'none';
+  const input = document.getElementById('api-url-input');
+  if (input) input.value = API_URL;
 }
 
 // ══════════════════════════════════════════
